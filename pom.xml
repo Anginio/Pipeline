@@ -100,7 +100,7 @@
     </profiles>
 
 	<build>
-		<finalName>CounterWebApp-${build.profile.id}</finalName>
+		
                 <filters>
                    <filter>src/main/filters/${build.profile.id}.filter</filter>
                 </filters>
