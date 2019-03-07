@@ -1,0 +1,36 @@
+node{
+    
+  def appname="CounterWebApp"
+  def env="dev"
+  def tagName="jenkins-${env}-${BUILD_NUMBER}"
+  def dockerRegistry="http://localhost:8090"
+
+  stage ('Build') 
+     git url: 'https://github.com/Anginio/Pipeline.git'
+    def mvnHome = tool 'Maven3'
+    sh "${mvnHome}/bin/mvn clean install -Dproject.version=${BUILD_NUMBER} -P ${e nv}"
+  
+  stage ('Docker Image')
+  
+     appimage=docker.build(tagName,"--build-arg FILE=target/${appname}-${env}-${BUILD_NUMBER}.war .")
+    
+  st)age ('Push to Nexus')
+   
+      docker.withRegistry(dockerRegistry){
+         appimage.push()
+      }
+      
+  stage ('CleanUp')
+  
+      sh "docker rmi \$(docker images | grep ${tagName} | awk '{print \$3}' | uniq ) --force"
+     // sh "docker stop \$(docker ps | grep jenkins-dev | awk '{print \$1}' | uniq )"
+     // sh "docker rm \$(docker ps -qa)"
+      sh "docker stop ${appname}-${env}"
+      sh "docker rm ${appname}-${env}"
+      
+  stage ('Deploy')
+  
+      def deployimage="${dockerRegistry}/${tagName}".substring(7)
+      sh "docker run --name ${appname}-${env}  -d -p 9000:8080 ${deployimage}"
+      
+} 
